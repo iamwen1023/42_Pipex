@@ -2,44 +2,124 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "libft/libft.h"
+# define BUILTINS_PATH "/srcs/builtins"
 
+char    *ms_get_path(void)
+{
+    return (ft_strjoin(ft_strjoin(ft_strjoin(
+                getcwd(NULL, 0), BUILTINS_PATH), ":"), getenv("PATH")));
+}
+
+char    *ms_getbin_path(char *bin)
+{
+    char    *path;
+    char    **dir;
+    char    *bin_path;
+
+    if (!bin)
+        return (0);
+    path = ms_get_path();
+    if (!path)
+        return (0);
+    dir = ft_split(path, ':');
+    if (!dir)
+        return (0);
+    while (*dir)
+    {
+        bin_path = ft_strjoin(ft_strjoin(*dir, "/"), bin);
+        if (!bin_path)
+            return (0);
+        if (access(bin_path, F_OK|X_OK) == 0)
+            return (bin_path);
+        ++dir;
+    }
+    return (0);
+}
+  
 
 int main(int ac, char **av, char **env)
 {
+    //try cm1 | cm2
     int fd1;
     int fd2;
     //char *argarr[] = { "ls","-l", NULL };
-    char **argarr;
-    char *envarr[] = { NULL };
-    char *path;
+    char **argarr1;
+    char *envarr1[] = { NULL };
+    char *envarr2[] = { NULL };
+    char *path1;
+    char **argarr2;
+    char *path2;
+    int fdpipe[2];
 
+   
+    // char *arr = ms_getbin_path(av[1]);
+    // printf("path:%s\n" ,arr);
+    if (pipe(fdpipe) == -1)
+        return 1;
+    int pid1 = fork();
+    if (pid1 < 0)
+        return 1;
+    if (pid1 == 0)
+    {
+        //child process 1
+        argarr1 = ft_split(av[1], ' ');
+        int i = -1;
+        // printf("argrr:\n");
+        // while(argarr1[++i])
+        // {
+        //     printf("%d:%s\n", i , argarr1[i]);
+        // }
+        path1 = ms_getbin_path(argarr1[0]);
+        dup2(fdpipe[1], STDOUT_FILENO);
+        close(fdpipe[0]);
+        close(fdpipe[1]);
+        if (execve(path1, argarr1, envarr1) ==  -1)
+        {
+            printf("Erorr happended while execve\n");
+            return (1);
+        }
+    }
 
-    if (ac != 5)
+    int pid2 = fork();
+    if (pid2 < 0)
+        return 1;
+    if  (pid2 == 0)
     {
-        printf("Wrong paramaters\n");
-        return (1);   
+        //child process 2
+        argarr2 = ft_split(av[2], ' ');
+        int i = -1;
+        // printf("argrr:\n");
+        // while(argarr2[++i])
+        // {
+        //     printf("%d:%s\n", i , argarr2[i]);
+        // }
+        path2 = ms_getbin_path(argarr2[0]);
+        dup2(fdpipe[0], STDIN_FILENO);
+        close(fdpipe[0]);
+        close(fdpipe[1]);
+        if (execve(path2, argarr2, envarr2) ==  -1)
+        {
+            printf("Erorr happended while execve2\n");
+            return (1);
+        }
     }
-    fd1 = open(av[1], O_RDONLY);
-    if (!fd1)
-    {
-        printf("Erorr happended while opening fd1\n");
-        return (1);
-    }
-    printf("excute\n");
-    //usr/bin/ls?
-    argarr = ft_split(av[2], ' ');
-    int i = -1;
-    printf("argrr:\n");
-    while(argarr[++i])
-    {
-        printf("%d:%s\n", i , argarr[i]);
-    }
-    path = ft_strjoin("/bin/", argarr[0]);
-    printf("path:%s\n", path);
-    if (execve(path, argarr, envarr) ==  -1)
-    {
-        printf("Erorr happended while execve\n");
-        return (1);
-    }
+    close(fdpipe[0]);
+    close(fdpipe[1]);
+    waitpid(pid1, NULL, 0);
+    waitpid(pid2, NULL, 0);
 
+    // if (ac != 5)
+    // {
+    //     printf("Wrong paramaters\n");
+    //     return (1);   
+    // }
+    // fd1 = open(av[1], O_RDONLY);
+    // if (!fd1)
+    // {
+    //     printf("Erorr happended while opening fd1\n");
+    //     return (1);
+    // }
+    
+    //leaks from malloc
     return (0);
+}
