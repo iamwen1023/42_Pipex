@@ -1,5 +1,15 @@
 #include "includes/pipex.h"
+void	free_path(char **paths)
+{
+	int i;
 
+	i = 0;
+	while(paths[i])
+	{
+		free(paths[i]);
+		i++;
+	}
+}
 char	*get_path(char *cmd, char **envp)
 {
 	char	**paths;
@@ -18,7 +28,10 @@ char	*get_path(char *cmd, char **envp)
 		path = ft_strjoin(part_path, cmd);
 		free(part_path);
 		if (access(path, F_OK) == 0)
+		{
+			free_path(paths);
 			return (path);
+		}
 		i++;
 	}
 	return (0);
