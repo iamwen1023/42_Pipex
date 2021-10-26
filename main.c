@@ -51,9 +51,6 @@ int main(int ac, char **av, char **env)
     char *path2;
     int fdpipe[2];
 
-   
-    // char *arr = ms_getbin_path(av[1]);
-    // printf("path:%s\n" ,arr);
     if (pipe(fdpipe) == -1)
         return 1;
     int pid1 = fork();
@@ -64,12 +61,8 @@ int main(int ac, char **av, char **env)
         //child process 1
         argarr1 = ft_split(av[1], ' ');
         int i = -1;
-        // printf("argrr:\n");
-        // while(argarr1[++i])
-        // {
-        //     printf("%d:%s\n", i , argarr1[i]);
-        // }
         path1 = ms_getbin_path(argarr1[0]);
+        //close stdout, redict stdout to fdpipe[1]
         dup2(fdpipe[1], STDOUT_FILENO);
         close(fdpipe[0]);
         close(fdpipe[1]);
@@ -79,7 +72,6 @@ int main(int ac, char **av, char **env)
             return (1);
         }
     }
-
     int pid2 = fork();
     if (pid2 < 0)
         return 1;
@@ -88,11 +80,6 @@ int main(int ac, char **av, char **env)
         //child process 2
         argarr2 = ft_split(av[2], ' ');
         int i = -1;
-        // printf("argrr:\n");
-        // while(argarr2[++i])
-        // {
-        //     printf("%d:%s\n", i , argarr2[i]);
-        // }
         path2 = ms_getbin_path(argarr2[0]);
         dup2(fdpipe[0], STDIN_FILENO);
         close(fdpipe[0]);
@@ -106,20 +93,7 @@ int main(int ac, char **av, char **env)
     close(fdpipe[0]);
     close(fdpipe[1]);
     waitpid(pid1, NULL, 0);
-    waitpid(pid2, NULL, 0);
-
-    // if (ac != 5)
-    // {
-    //     printf("Wrong paramaters\n");
-    //     return (1);   
-    // }
-    // fd1 = open(av[1], O_RDONLY);
-    // if (!fd1)
-    // {
-    //     printf("Erorr happended while opening fd1\n");
-    //     return (1);
-    // }
-    
+    waitpid(pid2, NULL, 0);    
     //leaks from malloc
     return (0);
 }
