@@ -37,7 +37,7 @@ char    *ms_getbin_path(char *bin)
 }
   
 
-int main(int ac, char **av, char **env)
+int main(int ac, char **av)
 {
     //try cm1 | cm2
     int fd1;

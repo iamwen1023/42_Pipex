@@ -1,46 +1,27 @@
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include "libft/libft.h"
-#include <errno.h>
+#include "includes/pipex.h"
 
-# define BUILTINS_PATH "/srcs/builtins"
-
-char    *ms_get_path(void)
+char	*get_path(char *cmd, char **envp)
 {
-    return (ft_strjoin(ft_strjoin(ft_strjoin(
-                getcwd(NULL, 0), BUILTINS_PATH), ":"), getenv("PATH")));
-}
+	char	**paths;
+	char	*path;
+	int		i;
+	char	*part_path;
 
-char    *ms_getbin_path(char *bin)
-{
-    char    *path;
-    char    **dir;
-    char    *bin_path;
-
-    if (!bin)
-        return (0);
-    path = ms_get_path();
-    if (!path)
-        return (0);
-    dir = ft_split(path, ':');
-    if (!dir)
-        return (0);
-    while (*dir)
-    {
-        bin_path = ft_strjoin(ft_strjoin(*dir, "/"), bin);
-        if (!bin_path)
-            return (0);
-        if (access(bin_path, F_OK|X_OK) == 0)
-            return (bin_path);
-		else 
-		{
-			perror("access: ");
-			exit(1);
-		}
-        ++dir;
-    }
-    return (0);
+	i = 0;
+	while (ft_strnstr(envp[i], "PATH", 4) == 0)
+		i++;
+	paths = ft_split(envp[i] + 5, ':');
+	i = 0;
+	while (paths[i])
+	{
+		part_path = ft_strjoin(paths[i], "/");
+		path = ft_strjoin(part_path, cmd);
+		free(part_path);
+		if (access(path, F_OK) == 0)
+			return (path);
+		i++;
+	}
+	return (0);
 }
 
 int	child_process(int end[], char **av, char **ev)
@@ -48,9 +29,9 @@ int	child_process(int end[], char **av, char **ev)
 	int	file1;
 	char **cmd;
 	char *path;
-	char *envarr[] = { NULL };
+
 	//for "< file1"
-	file1 = open(av[1], O_RDONLY);
+	file1 = open(av[1], O_RDONLY, 0777);
 	if (file1 < 0)
 	{
 		perror("Open: ");
@@ -69,8 +50,14 @@ int	child_process(int end[], char **av, char **ev)
 	close(end[0]);
 	close(file1);
 	cmd = ft_split(av[2], ' ');
-	path = ms_getbin_path(cmd[0]);
-	if (execve(path, cmd, envarr) ==  -1)
+	//path = ms_getbin_path(cmd[0]);
+	path = get_path(cmd[0], ev);
+	if (!path)
+	{
+		perror("can not fine path!");
+		exit(1);
+	}
+	if (execve(path, cmd, ev) ==  -1)
     {
         perror("execve: ");
         return (1);
@@ -83,9 +70,9 @@ int	parent_process(int end[], char **av, char **ev)
 	int	file2;
 	char **cmd;
 	char *path;
-	char *envarr[] = { NULL };
+
 	//for "> file2"
-	file2 = open(av[4], O_WRONLY | O_CREAT);
+	file2 = open(av[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (file2 < 0)
 	{
 		perror("Open: ");
@@ -104,8 +91,14 @@ int	parent_process(int end[], char **av, char **ev)
 	close(end[1]);
 	close(file2);
 	cmd = ft_split(av[3], ' ');
-	path = ms_getbin_path(cmd[0]);
-	if (execve(path, cmd, envarr) ==  -1)
+	//path = ms_getbin_path(cmd[0]);
+	path = get_path(cmd[0], ev);
+	if (!path)
+	{
+		perror("can not fine path!");
+		exit(1);
+	}
+	if (execve(path, cmd, ev) ==  -1)
     {
         perror("execve: ");
         return (1);
@@ -119,15 +112,16 @@ void    pipex(char **av, char **envp)
 	pid_t child2;
 	int   status;
 
-    pipe(end);
+    if (pipe(end) < 0)
+		return (perror("Pipe: "));
     child1 = fork();
     if (child1 < 0)
-         return (perror("Fork: "));
+        return (perror("Fork: "));
     if (!child1) 
         child_process(end, av, envp);
 	child2 = fork();
 	if (child2 < 0)
-         return (perror("Fork: "));
+        return (perror("Fork: "));
     if (!child2)
         parent_process(end, av, envp);
 	close(end[0]);
@@ -140,7 +134,7 @@ int main(int ac, char **av, char **env)
 {
 	if (ac != 5)
 	{
-		printf("arg != 5");
+		perror("arg != 5");
 		return 1;
 	}
 	pipex(av, env);
