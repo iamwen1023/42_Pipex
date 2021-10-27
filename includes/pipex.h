@@ -3,4 +3,5 @@
 #include <unistd.h>
 #include "../libft/libft.h"
 #include <errno.h>
-#define BUILTINS_PATH "/srcs/builtins"
+#include <sys/types.h>
+#include <sys/wait.h>
