@@ -1,7 +1,7 @@
 INCS		= includes
 LIB			= libft
 LIB.A		= libft.a
-SRC			= main_new.c
+SRC			= main.c
 SRC_B		= main_bonus.c
 OBJ			= $(SRC:.c=.o)
 OBJ_B		= $(SRC_B:.c=.o)

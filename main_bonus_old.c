@@ -203,7 +203,10 @@ int	main(int ac, char **av, char **env)
 		return (1);
 	}
 	pipex(ac, av, env);
-	//leaks from not free?
-	//checl env?
+	// leaks from not free?
+	// check env?
+	// fork double var..
+	// comment not found
+
 	return (0);
 }
