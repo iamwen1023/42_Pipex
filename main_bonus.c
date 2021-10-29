@@ -131,22 +131,47 @@ t_list *init_cmd(int ac, char **av)
 	}
 	return (cmds);
 }
-void	replace(t_list *cmds, int end[], int j)
+void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
 {
+	int i;
+	char	**cmd;
+	char	*path;
 	//if not last cmd
     if (cmds->next)
 	{
-		printf("cmds1:%s, %d, %d\n", cmds->content, j, 2 * j + 1);
+		fprintf(stderr,"cmds1:%s, %d, %d\n", cmds->content, j, 2 * j + 1);
         if (dup2(end[2 * j + 1], STDOUT_FILENO) < 0)
+		{
+			fprintf(stderr, "hahah1\n");
 			error_message("Dup2 1", 0, 0);
+		}
     }
 	//if not first cmd
 	if (j != 0)
 	{
-		printf("cmds2:%s, %d, %d\n", cmds->content, j, 2 * (j-1));
+		fprintf(stderr,"cmds2:%s, %d, %d\n", cmds->content, j, 2 * (j-1));
         if (dup2(end[2 * (j-1)], STDIN_FILENO) < 0)
+		{
+			fprintf(stderr, "hahah2\n");
 			error_message("Dup2 2", 0, 0);
+		}
     }
+	i = -1;
+    while(++i < (ac - 2) * 2)	
+		close(end[i]);
+	cmd = ft_split((char *)cmds->content, ' ');
+			//printf("cmd sper: %s\n", cmd[0]);
+	path = get_path(cmd[0], envp);
+			//printf("path: %s\n", path);
+    if (!path)
+	{
+		perror(cmd[0]);
+		error_message(cmd[0], 0, 0);
+	}
+	if (execve(path, cmd, envp) == -1)
+	{
+		error_message("execve ", end, &cmd);
+	}
 }
 void print_out(t_list *cmds)
 {
@@ -165,8 +190,8 @@ void	pipex(int ac, char **av, char **envp)
 
 	pid_t	child1;
 	t_list	*cmds;
-	char	**cmd;
-	char	*path;
+	// char	**cmd;
+	// char	*path;
 	int		j;
 	int		i;
 
@@ -196,7 +221,7 @@ void	pipex(int ac, char **av, char **envp)
 			error_message("Fork ", end, 0);
         if (child1 == 0)
 		{
-			replace(cmds, end, j);
+			replace(ac, cmds, end, j, envp);
 			// //if not last cmd
             // if (cmds->next)
 			// {
@@ -209,24 +234,7 @@ void	pipex(int ac, char **av, char **envp)
             //     if (dup2(end[2 * j], STDIN_FILENO < 0))
 			// 		error_message("Dup2 ", end, 0);
             // }
-			i = -1;
-			//printf("fine2:%d\n", j);
-            while(++i < (ac - 2) * 2)	
-				close(end[i]);
-			cmd = ft_split((char *)cmds->content, ' ');
-			//printf("cmd sper: %s\n", cmd[0]);
-			path = get_path(cmd[0], envp);
-			//printf("path: %s\n", path);
-            if (!path)
-			{
-				perror(cmd[0]);
-				error_message(cmd[0], 0, 0);
-			}
-			//printf("fine:%d\n", j);
-			if (execve(path, cmd, envp) == -1)
-			{
-				error_message("execve ", end, &cmd);
-			}
+
         }
 		cmds = cmds->next;
 		j++;
