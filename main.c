@@ -82,8 +82,6 @@ void	child1_process(int end[], char **av, char **ev)
 	if (!path)
 	{
 		perror(cmd[0]);
-		perror(cmd[1]);
-		perror(cmd[2]);
 		error_message(cmd[0], end, &cmd);
 	}
 	if (execve(path, cmd, ev) == -1)
