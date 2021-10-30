@@ -62,59 +62,6 @@ char	*get_path(char *cmd, char **envp)
 	return (0);
 }
 
-void	child1_process(int end[], char **av, char **ev)
-{
-	int		file1;
-	char	**cmd;
-	char	*path;
-
-	file1 = open(av[1], O_RDONLY);
-	if (file1 < 0)
-		error_message("Open ", end, 0);
-	if (dup2(file1, STDIN_FILENO) < 0)
-		error_message("Dup2 ", end, 0);
-	if (dup2(end[1], STDOUT_FILENO) < 0)
-		error_message("Dup2 ", end, 0);
-	close(end[0]);
-	close(file1);
-	cmd = ft_split(av[2], ' ');
-	path = get_path(cmd[0], ev);
-	if (!path)
-	{
-		perror(cmd[0]);
-		perror(cmd[1]);
-		perror(cmd[2]);
-		error_message(cmd[0], end, &cmd);
-	}
-	if (execve(path, cmd, ev) == -1)
-		error_message("execve ", end, &cmd);
-}
-
-void	child2_process(int end[], char **av, char **ev)
-{
-	int		file2;
-	char	**cmd;
-	char	*path;
-
-	file2 = open(av[4], O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if (file2 < 0)
-		error_message("Open ", end, 0);
-	if (dup2(file2, STDOUT_FILENO) < 0)
-		error_message("Dup2 ", end, 0);
-	if (dup2(end[0], STDIN_FILENO) < 0)
-		error_message("Dup2 ", end, 0);
-	close(end[1]);
-	close(file2);
-	cmd = ft_split(av[3], ' ');
-	path = get_path(cmd[0], ev);
-	if (!path)
-	{
-		perror(cmd[0]);
-		error_message("command not found", end, &cmd);
-	}
-	if (execve(path, cmd, ev) == -1)
-		error_message("execve ", end, &cmd);
-}
 t_list *init_cmd(int ac, char **av)
 {
 	int		i;
@@ -122,15 +69,16 @@ t_list *init_cmd(int ac, char **av)
 	t_list *cmds;
 
 	
-	i = 0;
+	i = 1;
 	cmds = NULL;
-	while(++i <  ac)
+	while(++i <  ac - 1)
 	{
 		cmd = ft_lstnew(av[i]);
 		ft_lstadd_back(&cmds, cmd);
 	}
 	return (cmds);
 }
+
 void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
 {
 	int i;
@@ -139,40 +87,33 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
 	//if not last cmd
     if (cmds->next)
 	{
-		fprintf(stderr,"cmds1:%s, %d, %d\n", cmds->content, j, 2 * j + 1);
+		fprintf(stderr,"cmds1:%s, %d, %d\n", (char *)cmds->content, j, 2 * j + 1);
         if (dup2(end[2 * j + 1], STDOUT_FILENO) < 0)
-		{
-			fprintf(stderr, "hahah1\n");
 			error_message("Dup2 1", 0, 0);
-		}
     }
 	//if not first cmd
 	if (j != 0)
 	{
-		fprintf(stderr,"cmds2:%s, %d, %d\n", cmds->content, j, 2 * (j-1));
+		fprintf(stderr,"cmds2:%s, %d, %d\n", (char *)cmds->content, j, 2 * (j-1));
         if (dup2(end[2 * (j-1)], STDIN_FILENO) < 0)
-		{
-			fprintf(stderr, "hahah2\n");
 			error_message("Dup2 2", 0, 0);
-		}
     }
 	i = -1;
     while(++i < (ac - 2) * 2)	
 		close(end[i]);
 	cmd = ft_split((char *)cmds->content, ' ');
-			//printf("cmd sper: %s\n", cmd[0]);
 	path = get_path(cmd[0], envp);
-			//printf("path: %s\n", path);
     if (!path)
 	{
 		perror(cmd[0]);
-		error_message(cmd[0], 0, 0);
+		fprintf(stderr,"HERE???\n");
+		exit(1);
+		//error_message(cmd[0], 0, 0);
 	}
 	if (execve(path, cmd, envp) == -1)
-	{
 		error_message("execve ", end, &cmd);
-	}
 }
+
 void print_out(t_list *cmds)
 {
 	while(cmds->next)
@@ -184,28 +125,79 @@ void print_out(t_list *cmds)
 
 }
 
+int	parse_map(int fd, char **g_map)
+{
+	char	buffer[2];
+	int		ret;
+
+	ret = 1;
+	while (ret > 0)
+	{
+		ret = read(fd, buffer, 1);
+		buffer[1] = '\0';
+		if (ret < 0 )
+			break ;
+		else if (ret == 0)
+			return (0);
+		if ((*g_map) == 0)
+		{
+			(*g_map) = malloc(sizeof(char) * 2);
+			if (!(*g_map))
+				return (-1);
+			(*g_map)[0] = buffer[0];
+			(*g_map)[1] = '\0';
+		}
+		else
+			(*g_map) = ft_strjoin_map(&(*g_map), buffer);
+	}
+	return (1);
+}
+
+void	here_doc(int ac, char **av, char **envp)
+{
+	char	buffer[2];
+	int		ret;
+	char	*content;
+
+	ret = 1;
+	while (ret > 0)
+	{
+		ret = read(STDIN_FILENO, buffer, 1);
+		buffer[1] = '\0';
+		if (ret < 0 )
+			break ; // protect??
+		else if (ret == 0)
+			return (0);
+		if ((*g_map) == 0)
+		{
+			(*g_map) = malloc(sizeof(char) * 2);
+			if (!(*g_map))
+				return (-1);
+			(*g_map)[0] = buffer[0];
+			(*g_map)[1] = '\0';
+		}
+		else
+			(*g_map) = ft_strjoin_map(&(*g_map), buffer);
+	}
+
+
+}
+
 void	pipex(int ac, char **av, char **envp)
 {
 	int		end[(ac - 2) * 2];
-
 	pid_t	child1;
 	t_list	*cmds;
-	// char	**cmd;
-	// char	*path;
+	int		file1;
+	int		file2;
 	int		j;
 	int		i;
 
-
 	cmds = NULL;
-	if (!ft_strncmp(av[1], "here_doc" , 5))
-	{
-			printf("here_doc\n");
-			return ;
-	}
 	cmds = init_cmd(ac, av);
 	print_out(cmds);
 	i = -1;
-	while(++i < ac - 3)
+	while(++i < ac - 2)
 	{
 		if (pipe(&end[2 * i]) < 0)
 		{
@@ -221,20 +213,25 @@ void	pipex(int ac, char **av, char **envp)
 			error_message("Fork ", end, 0);
         if (child1 == 0)
 		{
+			if (j == 0)
+			{
+				file1 = open(av[1], O_RDONLY);
+				if (file1 < 0)
+					error_message("Open ", 0, 0);
+				if (dup2(file1, STDIN_FILENO) < 0)
+					error_message("Dup2 ", 0, 0);
+				close(file1);
+			}
+			else if (j == ac - 4)
+			{
+				file2 = open(av[ac - 1], O_WRONLY | O_CREAT | O_TRUNC, 0777);
+				if (file2 < 0)
+					error_message("Open ", end, 0);
+				if (dup2(file2, STDOUT_FILENO) < 0)
+					error_message("Dup2 ", end, 0);
+				close(file2);
+			}
 			replace(ac, cmds, end, j, envp);
-			// //if not last cmd
-            // if (cmds->next)
-			// {
-            //     if (dup2(end[2 * j + 1], STDOUT_FILENO < 0))
-			// 		error_message("Dup2 ", end, 0);
-            // }
-			// //if not first cmd
-			// if (j != 0)
-			// {
-            //     if (dup2(end[2 * j], STDIN_FILENO < 0))
-			// 		error_message("Dup2 ", end, 0);
-            // }
-
         }
 		cmds = cmds->next;
 		j++;
@@ -254,6 +251,11 @@ int	main(int ac, char **av, char **env)
 	// 	perror("arg < 5");
 	// 	return (1);
 	// }
+	if (!ft_strncmp(av[1], "here_doc" , 5))
+	{
+			printf("here_doc\n");
+			return ;
+	}
 	pipex(ac, av, env);
 	// leaks from not free?
 	// check env?
