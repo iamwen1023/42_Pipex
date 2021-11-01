@@ -125,7 +125,7 @@ void print_out(t_list *cmds)
 
 }
 
-int	parse_map(int fd, char **g_map)
+int	get_next_line(char **content)
 {
 	char	buffer[2];
 	int		ret;
@@ -133,52 +133,62 @@ int	parse_map(int fd, char **g_map)
 	ret = 1;
 	while (ret > 0)
 	{
-		ret = read(fd, buffer, 1);
+		ret = read(0, buffer, 1);
 		buffer[1] = '\0';
 		if (ret < 0 )
 			break ;
 		else if (ret == 0)
 			return (0);
-		if ((*g_map) == 0)
+		if ((*content) == 0)
 		{
-			(*g_map) = malloc(sizeof(char) * 2);
-			if (!(*g_map))
-				return (-1);
-			(*g_map)[0] = buffer[0];
-			(*g_map)[1] = '\0';
+			(*content) = malloc(sizeof(char) * 2);
+			if (!(*content))
+				return (1);
+			(*content)[0] = buffer[0];
+			(*content)[1] = '\0';
 		}
 		else
-			(*g_map) = ft_strjoin_map(&(*g_map), buffer);
+			(*content) = ft_strjoin((*content), buffer);
+		if (buffer[0] == '\n')
+			return 1;
+		//printf("content:%s\n", (*content));
+	}
+	return (1);
+}
+
+int check_get_next_line(char *content)
+{
+	int	len;
+
+	len = 0;
+	while (content[len] && content[len] != '\n')
+		len++;
+	printf("check:%d, |%s|\n", len, content);
+	if (ft_strncmp(content, "end", 4))
+	{
+		content = content + len + 1;
+		if (*content)
+			check_get_next_line(content);
+		else
+			return 0;
 	}
 	return (1);
 }
 
 void	here_doc(int ac, char **av, char **envp)
 {
-	char	buffer[2];
-	int		ret;
-	char	*content;
+	static char	*content = NULL;
 
-	ret = 1;
-	while (ret > 0)
+	(void)ac;
+	(void)av;
+	(void)envp;
+	while(printf("rea\n")&& get_next_line(&content) != 0 && check_get_next_line(content))
 	{
-		ret = read(STDIN_FILENO, buffer, 1);
-		buffer[1] = '\0';
-		if (ret < 0 )
-			break ; // protect??
-		else if (ret == 0)
-			return (0);
-		if ((*g_map) == 0)
-		{
-			(*g_map) = malloc(sizeof(char) * 2);
-			if (!(*g_map))
-				return (-1);
-			(*g_map)[0] = buffer[0];
-			(*g_map)[1] = '\0';
-		}
-		else
-			(*g_map) = ft_strjoin_map(&(*g_map), buffer);
+
+		printf("end here\n");
+		break ;
 	}
+	printf("out here\n");
 
 
 }
@@ -251,10 +261,11 @@ int	main(int ac, char **av, char **env)
 	// 	perror("arg < 5");
 	// 	return (1);
 	// }
-	if (!ft_strncmp(av[1], "here_doc" , 5))
+	if (!ft_strncmp(av[1], "here_doc" , 8))
 	{
 			printf("here_doc\n");
-			return ;
+			here_doc(ac, av, env);
+			return (0);
 	}
 	pipex(ac, av, env);
 	// leaks from not free?
