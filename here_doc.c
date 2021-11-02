@@ -1,14 +1,14 @@
 #include "includes/pipex.h"
 
-t_list *init_cmd_doc(int ac, char **av)
+t_list	*init_cmd_doc(int ac, char **av)
 {
 	int		i;
-	t_list *cmd;
-	t_list *cmds;
-	
+	t_list	*cmd;
+	t_list	*cmds;
+
 	i = 2;
 	cmds = NULL;
-	while(++i <  ac - 1)
+	while (++i < ac - 1)
 	{
 		cmd = ft_lstnew(av[i]);
 		ft_lstadd_back(&cmds, cmd);
@@ -25,12 +25,13 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	int		file2;
 	int		j;
 	int		i;
+	//Variable length array forbidden
 
 	cmds = NULL;
 	cmds = init_cmd_doc(ac, av);
 	print_out(cmds);
 	i = -1;
-	while(++i < ac - 5)
+	while (++i < ac - 5)
 	{
 		if (pipe(&end[2 * i]) < 0)
 		{
@@ -39,12 +40,12 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 		}
 	}
 	j = 0;
-	while(cmds != NULL )
+	while (cmds != NULL )
 	{
 		child1 = fork();
 		if (child1 < 0)
 			error_message("Fork ", end, 0);
-        if (child1 == 0)
+		if (child1 == 0)
 		{
 			if (j == 0)
 			{
@@ -65,19 +66,19 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 				close(file2);
 			}
 			replace(ac - 3, cmds, end, j, envp);
-        }
+		}
 		cmds = cmds->next;
 		j++;
     }
 	//parent process
 	i = -1;
-	while(++i < (ac - 5) * 2)	
+	while (++i < (ac - 5) * 2)	
 		close(end[i]);
 	while (errno != ECHILD)
 		wait(NULL);
 }
 
-int check_get_next_line(char *content, char *keyword)
+int	check_get_next_line(char *content, char *keyword)
 {
 	int	len;
 
@@ -89,12 +90,12 @@ int check_get_next_line(char *content, char *keyword)
 		content = content + len + 1;
 		if (*content)
 		{
-			if (check_get_next_line(content, keyword) ==  1)
+			if (check_get_next_line(content, keyword) == 1)
 				return 1;
-			return 0;
+			return (0);
 		}
 		else
-			return 0;
+			return (0);
 	}
 	else
 		return (1);
@@ -137,7 +138,7 @@ int	get_next_line(char **content, char *keyword)
 			if (check_get_next_line(*content, newkeyword) == 1)
 			{
 				free(newkeyword);
-				return 0;			
+				return (0);			
 			}
 		}
 	}
@@ -153,12 +154,10 @@ void	here_doc(int ac, char **av, char **envp)
 	fd = open("temp", O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (fd < 0)
 		error_message("Open ", 0, 0);
-	while(get_next_line(&content, av[2]) > 0)
+	while (get_next_line(&content, av[2]) > 0)
 	len = ft_strlen(av[2]);
-	write(fd, content, ft_strlen(content) -  (len + 1));
-	write(0, content, ft_strlen(content) -  (len + 1));
+	write(fd, content, ft_strlen(content) - (len + 1));
+	write(0, content, ft_strlen(content) - (len + 1));
 	close(fd);
 	pipex_heredoc(ac, av, envp);
-	
-
 }
