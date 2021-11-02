@@ -123,7 +123,8 @@ void print_out(t_list *cmds)
 }
 void	pipex(int ac, char **av, char **envp)
 {
-	int		end[(ac - 2) * 2];
+	//int		end[(ac - 2) * 2];
+	int		*end;
 	pid_t	child1;
 	t_list	*cmds;
 	int		file1;
@@ -133,15 +134,18 @@ void	pipex(int ac, char **av, char **envp)
 
 	cmds = NULL;
 	cmds = init_cmd(ac, av);
-	print_out(cmds);
+	end = malloc((ac - 2) * 2 * sizeof(int));
+	if (!end)
+		error_message("malloc", 0, 0);
 	i = -1;
 	while(++i < ac - 2)
 	{
-		if (pipe(&end[2 * i]) < 0)
+		if (pipe(end) < 0)
 		{
 			perror("pipe");
 			exit(1);
 		}
+		end = end + (2 * i);
 	}
 	j = 0;
 	while(cmds != NULL )
@@ -178,6 +182,7 @@ void	pipex(int ac, char **av, char **envp)
 	i = -1;
 	while(++i < (ac - 2) * 2)	
 		close(end[i]);
+	free(end);
 	while (errno != ECHILD)
 		wait(NULL);
 }
@@ -192,7 +197,6 @@ int	main(int ac, char **av, char **env)
 	}
 	if (!ft_strncmp(av[1], "here_doc" , 9))
 	{
-			printf("here_doc\n");
 			here_doc(ac, av, env);
 			return (0);
 	}
