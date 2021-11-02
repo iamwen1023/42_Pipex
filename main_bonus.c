@@ -84,18 +84,15 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
 	int i;
 	char	**cmd;
 	char	*path;
-	printf("replce: %d\n", ac);
 	//if not last cmds
     if (cmds->next)
 	{
-		fprintf(stderr,"cmds1:%s, %d, %d\n", (char *)cmds->content, j, 2 * j + 1);
         if (dup2(end[2 * j + 1], STDOUT_FILENO) < 0)
 			error_message("Dup2 1", 0, 0);
     }
 	//if not first cmd
 	if (j != 0)
 	{
-		fprintf(stderr,"cmds2:%s, %d, %d\n", (char *)cmds->content, j, 2 * (j-1));
         if (dup2(end[2 * (j-1)], STDIN_FILENO) < 0)
 			error_message("Dup2 2", 0, 0);
     }
@@ -107,7 +104,6 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
     if (!path)
 	{
 		perror(cmd[0]);
-		fprintf(stderr,"HERE???\n");
 		exit(1);
 		//error_message(cmd[0], 0, 0);
 	}
@@ -189,18 +185,18 @@ void	pipex(int ac, char **av, char **envp)
 
 int	main(int ac, char **av, char **env)
 {
-	// if (ac < 5)
-	// {
-	// 	perror("arg < 5");
-	// 	return (1);
-	// }
+	if (ac < 5)
+	{
+		perror("arg < 5");
+		return (1);
+	}
 	if (!ft_strncmp(av[1], "here_doc" , 9))
 	{
 			printf("here_doc\n");
 			here_doc(ac, av, env);
 			return (0);
 	}
-	//pipex(ac, av, env);
+	pipex(ac, av, env);
 	// leaks from not free?
 	// check env?
 	// fork double var..

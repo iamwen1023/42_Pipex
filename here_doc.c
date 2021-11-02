@@ -5,7 +5,6 @@ t_list *init_cmd_doc(int ac, char **av)
 	int		i;
 	t_list *cmd;
 	t_list *cmds;
-
 	
 	i = 2;
 	cmds = NULL;
@@ -137,7 +136,6 @@ int	get_next_line(char **content, char *keyword)
 		{
 			if (check_get_next_line(*content, newkeyword) == 1)
 			{
-				printf("find out\n");
 				free(newkeyword);
 				return 0;			
 			}
@@ -152,7 +150,7 @@ void	here_doc(int ac, char **av, char **envp)
 	int			fd;
 	int			len;
 
-	fd = open("temp", O_WRONLY | O_CREAT | O_APPEND, 0777);
+	fd = open("temp", O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (fd < 0)
 		error_message("Open ", 0, 0);
 	while(get_next_line(&content, av[2]) > 0)
@@ -160,7 +158,6 @@ void	here_doc(int ac, char **av, char **envp)
 	write(fd, content, ft_strlen(content) -  (len + 1));
 	write(0, content, ft_strlen(content) -  (len + 1));
 	close(fd);
-	printf("origin :%d\n", ac);
 	pipex_heredoc(ac, av, envp);
 	
 
