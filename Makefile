@@ -2,7 +2,7 @@ INCS		= includes
 LIB			= libft
 LIB.A		= libft.a
 SRC			= main.c
-SRC_B		= main_bonus.c
+SRC_B		= main_bonus.c here_doc.c
 OBJ			= $(SRC:.c=.o)
 OBJ_B		= $(SRC_B:.c=.o)
 NAME		= pipex

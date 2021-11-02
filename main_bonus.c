@@ -84,7 +84,8 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
 	int i;
 	char	**cmd;
 	char	*path;
-	//if not last cmd
+	printf("replce: %d\n", ac);
+	//if not last cmds
     if (cmds->next)
 	{
 		fprintf(stderr,"cmds1:%s, %d, %d\n", (char *)cmds->content, j, 2 * j + 1);
@@ -124,75 +125,6 @@ void print_out(t_list *cmds)
 	printf("cmd:%s\n", (char *)cmds->content);
 
 }
-
-int	get_next_line(char **content)
-{
-	char	buffer[2];
-	int		ret;
-
-	ret = 1;
-	while (ret > 0)
-	{
-		ret = read(0, buffer, 1);
-		buffer[1] = '\0';
-		if (ret < 0 )
-			break ;
-		else if (ret == 0)
-			return (0);
-		if ((*content) == 0)
-		{
-			(*content) = malloc(sizeof(char) * 2);
-			if (!(*content))
-				return (1);
-			(*content)[0] = buffer[0];
-			(*content)[1] = '\0';
-		}
-		else
-			(*content) = ft_strjoin((*content), buffer);
-		if (buffer[0] == '\n')
-			return 1;
-		//printf("content:%s\n", (*content));
-	}
-	return (1);
-}
-
-int check_get_next_line(char *content)
-{
-	int	len;
-
-	len = 0;
-	while (content[len] && content[len] != '\n')
-		len++;
-	printf("check:%d, |%s|\n", len, content);
-	if (ft_strncmp(content, "end", 4))
-	{
-		content = content + len + 1;
-		if (*content)
-			check_get_next_line(content);
-		else
-			return 0;
-	}
-	return (1);
-}
-
-void	here_doc(int ac, char **av, char **envp)
-{
-	static char	*content = NULL;
-
-	(void)ac;
-	(void)av;
-	(void)envp;
-	while(printf("rea\n")&& get_next_line(&content) != 0 && check_get_next_line(content))
-	{
-
-		printf("end here\n");
-		break ;
-	}
-	printf("out here\n");
-
-
-}
-
 void	pipex(int ac, char **av, char **envp)
 {
 	int		end[(ac - 2) * 2];
@@ -254,6 +186,7 @@ void	pipex(int ac, char **av, char **envp)
 		wait(NULL);
 }
 
+
 int	main(int ac, char **av, char **env)
 {
 	// if (ac < 5)
@@ -261,13 +194,13 @@ int	main(int ac, char **av, char **env)
 	// 	perror("arg < 5");
 	// 	return (1);
 	// }
-	if (!ft_strncmp(av[1], "here_doc" , 8))
+	if (!ft_strncmp(av[1], "here_doc" , 9))
 	{
 			printf("here_doc\n");
 			here_doc(ac, av, env);
 			return (0);
 	}
-	pipex(ac, av, env);
+	//pipex(ac, av, env);
 	// leaks from not free?
 	// check env?
 	// fork double var..
