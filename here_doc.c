@@ -15,6 +15,22 @@ t_list	*init_cmd_doc(int ac, char **av)
 	}
 	return (cmds);
 }
+int		*pipex_creat_here(int ac, t_list *cmds)
+{
+	int		*end;
+	int		i;
+
+	end = malloc((ac - 5) * 2 * sizeof(int));
+	if (!end)
+		error_message_bo("malloc", 0, 0, cmds);
+	i = -1;
+	while(++i < ac - 5)
+	{
+		if (pipe(&end[2 * i]) < 0)
+			error_message_bo("pipe", 0, 0, cmds);
+	}
+	return end;
+}
 
 void	pipex_heredoc(int ac, char **av, char **envp)
 {
@@ -32,18 +48,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	cmds = NULL;
 	cmds = init_cmd_doc(ac, av);
 	cmds_re = cmds;
-	end = malloc((ac - 5) * 2 * sizeof(int));
-	if (!end)
-		error_message_bo("malloc", 0, 0, cmds);
-	print_out(cmds);
-	i = -1;
-	while (++i < ac - 5)
-	{
-		if (pipe(end) < 0)
-			error_message_bo("pipe", 0, 0, cmds);
-		end = end + (2 * i);
-	}
-	end = end - (ac - 5) * 2;
+	end = pipex_creat_here(ac , cmds);
 	j = 0;
 	while (cmds != NULL )
 	{

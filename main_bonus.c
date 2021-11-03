@@ -131,6 +131,23 @@ void print_out(t_list *cmds)
 	printf("cmd:%s\n", (char *)cmds->content);
 
 }
+
+int		*pipex_creat(int ac, t_list *cmds)
+{
+	int		*end;
+	int		i;
+
+	end = malloc((ac - 2) * 2 * sizeof(int));
+	if (!end)
+		error_message_bo("malloc", 0, 0, cmds);
+	i = -1;
+	while(++i < ac - 2)
+	{
+		if (pipe(&end[2 * i]) < 0)
+			error_message_bo("pipe", 0, 0, cmds);
+	}
+	return end;
+}
 void	pipex(int ac, char **av, char **envp)
 {
 	//int		end[(ac - 2) * 2];
@@ -146,17 +163,7 @@ void	pipex(int ac, char **av, char **envp)
 	cmds = NULL;
 	cmds = init_cmd(ac, av);
 	cmds_re = cmds;
-	end = malloc((ac - 2) * 2 * sizeof(int));
-	if (!end)
-		error_message_bo("malloc", 0, 0, cmds);
-	i = -1;
-	while(++i < ac - 2)
-	{
-		if (pipe(end) < 0)
-			error_message_bo("pipe", 0, 0, cmds);
-		end = end + (2 * i);
-	}
-	end = end - (ac - 2) * 2;
+	end = pipex_creat(ac , cmds);
 	j = 0;
 	while(cmds != NULL )
 	{
