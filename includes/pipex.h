@@ -12,3 +12,4 @@ void	free_path(char **paths);
 char	*get_path(char *cmd, char **envp);
 void	replace(int ac, t_list *cmds, int end[], int j, char **envp);
 void	print_out(t_list *cmds);
+void	normal_free(t_list *cmds);

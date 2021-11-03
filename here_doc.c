@@ -22,6 +22,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	int		*end;
 	pid_t	child1;
 	t_list	*cmds;
+	t_list	*cmds_re;
 	int		file1;
 	int		file2;
 	int		j;
@@ -30,6 +31,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 
 	cmds = NULL;
 	cmds = init_cmd_doc(ac, av);
+	cmds_re = cmds;
 	end = malloc((ac - 5) * 2 * sizeof(int));
 	if (!end)
 		error_message_bo("malloc", 0, 0, cmds);
@@ -46,29 +48,29 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	{
 		child1 = fork();
 		if (child1 < 0)
-			error_message_bo("Fork ", end, (ac - 5) * 2, cmds);
+			error_message_bo("Fork ", end, (ac - 5) * 2, cmds_re);
 		if (child1 == 0)
 		{
 			if (j == 0)
 			{
 				file1 = open("temp", O_RDONLY);
 				if (file1 < 0)
-					error_message_bo("Open ", end, (ac - 5) * 2, cmds);
+					error_message_bo("Open ", end, (ac - 5) * 2, cmds_re);
 				if (dup2(file1, STDIN_FILENO) < 0)
-					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds);
+					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds_re);
 				close(file1);
 			}
 			else if (j == ac - 5)
 			{
 				file2 = open(av[ac - 1], O_WRONLY | O_CREAT | O_APPEND, 0777);
 				if (file2 < 0)
-					error_message_bo("Open ", end, (ac - 5) * 2, cmds);
+					error_message_bo("Open ", end, (ac - 5) * 2, cmds_re);
 				if (dup2(file2, STDOUT_FILENO) < 0)
-					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds);
+					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds_re);
 				close(file2);
 			}
 			replace(ac - 3, cmds, end, j, envp);
-			normal_free(cmds);
+			normal_free(cmds_re);
 		}
 		cmds = cmds->next;
 		j++;
@@ -78,7 +80,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	while (++i < (ac - 5) * 2)	
 		close(end[i]);
 	free(end);
-	normal_free(cmds);
+	normal_free(cmds_re);
 	while (errno != ECHILD)
 		wait(NULL);
 }
