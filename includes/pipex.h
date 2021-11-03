@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 
 void	here_doc(int ac, char **av, char **envp);
-void	error_message(char *message, int end[], char ***cmd);
+void	error_message_bo(char *message, int *end, int num, t_list *cmds);
 void	free_path(char **paths);
 char	*get_path(char *cmd, char **envp);
 void	replace(int ac, t_list *cmds, int end[], int j, char **envp);

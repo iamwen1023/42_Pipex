@@ -18,7 +18,8 @@ t_list	*init_cmd_doc(int ac, char **av)
 
 void	pipex_heredoc(int ac, char **av, char **envp)
 {
-	int		end[(ac - 5) * 2];
+	//int		end[(ac - 5) * 2];
+	int		*end;
 	pid_t	child1;
 	t_list	*cmds;
 	int		file1;
@@ -29,40 +30,41 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 
 	cmds = NULL;
 	cmds = init_cmd_doc(ac, av);
+	end = malloc((ac - 5) * 2 * sizeof(int));
+	if (!end)
+		error_message_bo("malloc", 0, 0, cmds);
 	print_out(cmds);
 	i = -1;
 	while (++i < ac - 5)
 	{
-		if (pipe(&end[2 * i]) < 0)
-		{
-			perror("pipe");
-			exit(1);
-		}
+		if (pipe(end) < 0)
+			error_message_bo("pipe", 0, 0, cmds);
+		end = end + (2 * i);
 	}
 	j = 0;
 	while (cmds != NULL )
 	{
 		child1 = fork();
 		if (child1 < 0)
-			error_message("Fork ", end, 0);
+			error_message_bo("Fork ", end, (ac - 5) * 2, cmds);
 		if (child1 == 0)
 		{
 			if (j == 0)
 			{
 				file1 = open("temp", O_RDONLY);
 				if (file1 < 0)
-					error_message("Open ", 0, 0);
+					error_message_bo("Open ", end, (ac - 5) * 2, cmds);
 				if (dup2(file1, STDIN_FILENO) < 0)
-					error_message("Dup2 ", 0, 0);
+					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds);
 				close(file1);
 			}
 			else if (j == ac - 5)
 			{
 				file2 = open(av[ac - 1], O_WRONLY | O_CREAT | O_APPEND, 0777);
 				if (file2 < 0)
-					error_message("Open ", end, 0);
+					error_message_bo("Open ", end, (ac - 5) * 2, cmds);
 				if (dup2(file2, STDOUT_FILENO) < 0)
-					error_message("Dup2 ", end, 0);
+					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds);
 				close(file2);
 			}
 			replace(ac - 3, cmds, end, j, envp);
@@ -74,6 +76,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	i = -1;
 	while (++i < (ac - 5) * 2)	
 		close(end[i]);
+	free(end);
 	while (errno != ECHILD)
 		wait(NULL);
 }
@@ -99,6 +102,35 @@ int	check_get_next_line(char *content, char *keyword)
 	}
 	else
 		return (1);
+}
+
+char	*ft_strjoin_gnl(char **s1, char *s2)
+{
+	char	*arr;
+	size_t	i;
+	size_t	j;
+
+	if (!(*s1) || !s2)
+		return (0);
+	arr = (char *)malloc((ft_strlen(*s1) + ft_strlen(s2) + 1) * sizeof(char));
+	if (!arr)
+		return (0);
+	i = 0;
+	while ((*s1)[i])
+	{
+		arr[i] = (*s1)[i];
+		i++;
+	}
+	j = 0;
+	while (s2[j])
+	{
+		arr[i + j] = s2[j];
+		j++;
+	}
+	arr[i + j] = '\0';
+	free(*s1);
+	(*s1) = NULL;
+	return (arr);
 }
 
 int	get_next_line(char **content, char *keyword)
@@ -131,8 +163,7 @@ int	get_next_line(char **content, char *keyword)
 			(*content)[1] = '\0';
 		}
 		else
-			(*content) = ft_strjoin((*content), buffer);
-		//free?
+			(*content) = ft_strjoin_gnl(&(*content), buffer);
 		if (buffer[0] == '\n')
 		{
 			if (check_get_next_line(*content, newkeyword) == 1)
@@ -149,15 +180,22 @@ void	here_doc(int ac, char **av, char **envp)
 {
 	static char	*content = NULL;
 	int			fd;
-	int			len;
 
 	fd = open("temp", O_WRONLY | O_CREAT | O_TRUNC, 0777);
 	if (fd < 0)
-		error_message("Open ", 0, 0);
-	while (get_next_line(&content, av[2]) > 0)
-	len = ft_strlen(av[2]);
-	write(fd, content, ft_strlen(content) - (len + 1));
-	write(0, content, ft_strlen(content) - (len + 1));
+		error_message_bo("Open ", 0, 0 , 0);
+	if (get_next_line(&content, av[2]) < 0)
+	{
+		close(fd);
+		if (*content)
+			free(content);
+		perror("gnl");
+		exit(1);
+	}
+	write(0, content, ft_strlen(content) - ft_strlen(av[2]) - 1);
+	write(fd, content, ft_strlen(content) - ft_strlen(av[2]) - 1);
 	close(fd);
 	pipex_heredoc(ac, av, envp);
+	if (!access("temp", F_OK))
+        unlink("temp");
 }

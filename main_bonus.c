@@ -12,25 +12,22 @@ void	free_path(char **paths)
 	}
 }
 
-void	error_message(char *message, int end[], char ***cmd)
+void	error_message_bo(char *message, int *end, int num, t_list *cmds)
 {
-	int	i;
+	int		i;
+	t_list	*current;
 
-	i = 0;
+	i = -1;
 	perror(message);
-	if (end)
+	while(++i < num)
+		close(end[i]);
+	free(end);
+	while (cmds)
 	{
-		close(end[0]);
-		close(end[1]);
-	}
-	if (*cmd)
-	{
-		while ((*cmd)[i])
-		{
-			free((*cmd)[i]);
-			i++;
-		}
-		free(*cmd);
+		current = cmds;
+		cmds = cmds->next;
+		free(current);
+		current = NULL;
 	}
 	exit(1);
 }
@@ -88,13 +85,13 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
     if (cmds->next)
 	{
         if (dup2(end[2 * j + 1], STDOUT_FILENO) < 0)
-			error_message("Dup2 1", 0, 0);
+			error_message_bo("Dup2 1", end, (ac - 2) * 2, cmds);
     }
 	//if not first cmd
 	if (j != 0)
 	{
         if (dup2(end[2 * (j-1)], STDIN_FILENO) < 0)
-			error_message("Dup2 2", 0, 0);
+			error_message_bo("Dup2 2", end, (ac - 2) * 2, cmds);
     }
 	i = -1;
     while(++i < (ac - 2) * 2)	
@@ -102,13 +99,9 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
 	cmd = ft_split((char *)cmds->content, ' ');
 	path = get_path(cmd[0], envp);
     if (!path)
-	{
-		perror(cmd[0]);
-		exit(1);
-		//error_message(cmd[0], 0, 0);
-	}
+		error_message_bo(cmd[0], end, (ac - 2) * 2, cmds);
 	if (execve(path, cmd, envp) == -1)
-		error_message("execve ", end, &cmd);
+		error_message_bo("execve ", end, (ac - 2) * 2, cmds);
 }
 
 void print_out(t_list *cmds)
@@ -136,15 +129,12 @@ void	pipex(int ac, char **av, char **envp)
 	cmds = init_cmd(ac, av);
 	end = malloc((ac - 2) * 2 * sizeof(int));
 	if (!end)
-		error_message("malloc", 0, 0);
+		error_message_bo("malloc", 0, 0, cmds);
 	i = -1;
 	while(++i < ac - 2)
 	{
 		if (pipe(end) < 0)
-		{
-			perror("pipe");
-			exit(1);
-		}
+			error_message_bo("pipe", 0, 0, cmds);
 		end = end + (2 * i);
 	}
 	j = 0;
@@ -152,25 +142,25 @@ void	pipex(int ac, char **av, char **envp)
 	{
 		child1 = fork();
 		if (child1 < 0)
-			error_message("Fork ", end, 0);
+			error_message_bo("Fork", end, (ac - 2) * 2, cmds);
         if (child1 == 0)
 		{
 			if (j == 0)
 			{
 				file1 = open(av[1], O_RDONLY);
 				if (file1 < 0)
-					error_message("Open ", 0, 0);
+					error_message_bo("Open ", end, (ac - 2) * 2, cmds);
 				if (dup2(file1, STDIN_FILENO) < 0)
-					error_message("Dup2 ", 0, 0);
+					error_message_bo("Dup2 ", end, (ac - 2) * 2, cmds);
 				close(file1);
 			}
 			else if (j == ac - 4)
 			{
 				file2 = open(av[ac - 1], O_WRONLY | O_CREAT | O_TRUNC, 0777);
 				if (file2 < 0)
-					error_message("Open ", end, 0);
+					error_message_bo("Open ", end, (ac - 2) * 2, cmds);
 				if (dup2(file2, STDOUT_FILENO) < 0)
-					error_message("Dup2 ", end, 0);
+					error_message_bo("Dup2 ", end, (ac - 2) * 2, cmds);
 				close(file2);
 			}
 			replace(ac, cmds, end, j, envp);
