@@ -43,6 +43,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 			error_message_bo("pipe", 0, 0, cmds);
 		end = end + (2 * i);
 	}
+	end = end - (ac - 5) * 2;
 	j = 0;
 	while (cmds != NULL )
 	{
@@ -167,7 +168,7 @@ int	get_next_line(char **content, char *keyword)
 			(*content)[1] = '\0';
 		}
 		else
-			(*content) = ft_strjoin_gnl(&(*content), buffer);
+			(*content) = ft_strjoin_gnl(content, buffer);
 		if (buffer[0] == '\n')
 		{
 			if (check_get_next_line(*content, newkeyword) == 1)
@@ -199,6 +200,8 @@ void	here_doc(int ac, char **av, char **envp)
 	write(0, content, ft_strlen(content) - ft_strlen(av[2]) - 1);
 	write(fd, content, ft_strlen(content) - ft_strlen(av[2]) - 1);
 	close(fd);
+	if (*content)
+		free(content);
 	pipex_heredoc(ac, av, envp);
 	if (!access("temp", F_OK))
         unlink("temp");

@@ -156,6 +156,7 @@ void	pipex(int ac, char **av, char **envp)
 			error_message_bo("pipe", 0, 0, cmds);
 		end = end + (2 * i);
 	}
+	end = end - (ac - 2) * 2;
 	j = 0;
 	while(cmds != NULL )
 	{
@@ -191,7 +192,7 @@ void	pipex(int ac, char **av, char **envp)
 
 	//parent process
 	i = -1;
-	while(++i < (ac - 2) * 2)	
+	while(++i < (ac - 2) * 2)
 		close(end[i]);
 	free(end);
 	normal_free(cmds_re);
