@@ -20,7 +20,13 @@ void	error_message_bo(char *message, int *end, int num, t_list *cmds)
 	i = -1;
 	perror(message);
 	while(++i < num)
-		close(end[i]);
+	{
+		if (end[i] != -1)
+		{
+			close(end[i]);
+			end[i] = -1;
+		}
+	}
 	free(end);
 	while (cmds)
 	{
