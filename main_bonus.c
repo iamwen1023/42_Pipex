@@ -10,6 +10,7 @@ void	free_path(char **paths)
 		free(paths[i]);
 		i++;
 	}
+	free(paths);
 }
 void	normal_free(t_list *cmds)
 {
@@ -71,8 +72,11 @@ char	*get_path(char *cmd, char **envp)
 			free_path(paths);
 			return (path);
 		}
+		free(path);
 		i++;
 	}
+	if (paths)
+		free_path(paths);
 	return (0);
 }
 
@@ -93,7 +97,7 @@ t_list *init_cmd(int ac, char **av)
 	return (cmds);
 }
 
-void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
+void	replace(int ac, t_list *cmds, int end[], int j, char **envp, t_list *cmds_re)
 {
 	int i;
 	char	**cmd;
@@ -102,23 +106,31 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp)
     if (cmds->next)
 	{
         if (dup2(end[2 * j + 1], STDOUT_FILENO) < 0)
-			error_message_bo("Dup2 1", end, (ac - 2) * 2, cmds);
+			error_message_bo("Dup2 1", end, (ac - 2) * 2, cmds_re);
     }
 	//if not first cmd
 	if (j != 0)
 	{
         if (dup2(end[2 * (j-1)], STDIN_FILENO) < 0)
-			error_message_bo("Dup2 2", end, (ac - 2) * 2, cmds);
+			error_message_bo("Dup2 2", end, (ac - 2) * 2, cmds_re);
     }
 	i = -1;
     while(++i < (ac - 2) * 2)	
 		close(end[i]);
 	cmd = ft_split((char *)cmds->content, ' ');
 	path = get_path(cmd[0], envp);
+	//path and cmd not free?
     if (!path)
-		error_message_bo(cmd[0], end, (ac - 2) * 2, cmds);
+	{
+		free_path(cmd);
+		error_message_bo("path", end, (ac - 2) * 2, cmds_re);
+	}
 	if (execve(path, cmd, envp) == -1)
-		error_message_bo("execve ", end, (ac - 2) * 2, cmds);
+	{
+		free_path(path);
+		free_path(cmd);
+		error_message_bo("execve ", end, (ac - 2) * 2, cmds_re);
+	}
 }
 
 void print_out(t_list *cmds)
@@ -190,7 +202,7 @@ void	pipex(int ac, char **av, char **envp)
 					error_message_bo("Dup2 ", end, (ac - 2) * 2, cmds_re);
 				close(file2);
 			}
-			replace(ac, cmds, end, j, envp);
+			replace(ac, cmds, end, j, envp, cmds_re);
 			normal_free(cmds_re);
         }
 		cmds = cmds->next;
