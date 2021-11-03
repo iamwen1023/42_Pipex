@@ -68,6 +68,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 				close(file2);
 			}
 			replace(ac - 3, cmds, end, j, envp);
+			normal_free(cmds);
 		}
 		cmds = cmds->next;
 		j++;
@@ -77,6 +78,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 	while (++i < (ac - 5) * 2)	
 		close(end[i]);
 	free(end);
+	normal_free(cmds);
 	while (errno != ECHILD)
 		wait(NULL);
 }

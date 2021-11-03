@@ -11,7 +11,18 @@ void	free_path(char **paths)
 		i++;
 	}
 }
+void	normal_free(t_list *cmds)
+{
+	t_list	*current;
 
+	while (cmds)
+	{
+		current = cmds;
+		cmds = cmds->next;
+		free(current);
+		current = NULL;
+	}
+}
 void	error_message_bo(char *message, int *end, int num, t_list *cmds)
 {
 	int		i;
@@ -170,15 +181,18 @@ void	pipex(int ac, char **av, char **envp)
 				close(file2);
 			}
 			replace(ac, cmds, end, j, envp);
+			normal_free(cmds);
         }
 		cmds = cmds->next;
 		j++;
     }
+
 	//parent process
 	i = -1;
 	while(++i < (ac - 2) * 2)	
 		close(end[i]);
 	free(end);
+	normal_free(cmds);
 	while (errno != ECHILD)
 		wait(NULL);
 }
@@ -197,6 +211,7 @@ int	main(int ac, char **av, char **env)
 			return (0);
 	}
 	pipex(ac, av, env);
+
 	// leaks from not free?
 	// check env?
 	// fork double var..
