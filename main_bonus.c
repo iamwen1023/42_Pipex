@@ -127,7 +127,7 @@ void	replace(int ac, t_list *cmds, int end[], int j, char **envp, t_list *cmds_r
 	}
 	if (execve(path, cmd, envp) == -1)
 	{
-		free_path(path);
+		free(path);
 		free_path(cmd);
 		error_message_bo("execve ", end, (ac - 2) * 2, cmds_re);
 	}

@@ -75,7 +75,7 @@ void	pipex_heredoc(int ac, char **av, char **envp)
 					error_message_bo("Dup2 ", end, (ac - 5) * 2, cmds_re);
 				close(file2);
 			}
-			replace(ac - 3, cmds, end, j, envp);
+			replace(ac - 3, cmds, end, j, envp, cmds_re);
 			normal_free(cmds_re);
 		}
 		cmds = cmds->next;
